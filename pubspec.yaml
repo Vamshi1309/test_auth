@@ -1,0 +1,37 @@
+name: pod
+description: "A new Flutter project."
+publish_to: "none"
+version: 0.1.0
+
+environment:
+  sdk: ^3.5.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+  go_router: ^14.6.2
+  dio: ^5.7.0
+  shared_preferences: ^2.3.4
+  connectivity_plus: ^6.1.1
+  logger: ^2.0.0
+  flutter_screenutil: ^5.9.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  build_runner: ^2.4.13
+  riverpod_generator: ^2.6.2
+
+flutter:
+  uses-material-design: true
+
+  fonts:
+    - family: Cera Pro
+      fonts:
+        - asset: assets/fonts/Cera-Pro-Medium.otf
+          weight: 500
+        - asset: assets/fonts/Cera-Pro-Bold.otf
+          weight: 700
