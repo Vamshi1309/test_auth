@@ -1,6 +1,8 @@
 // lib/core/routing/app_router.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pod/features/auth/presentation/login/login_screen.dart';
+import 'package:pod/features/auth/presentation/register/register_screen.dart';
 // import 'package:pod/features/auth/login_screen.dart';
 import 'package:pod/features/splash/splash_screen.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -48,23 +50,28 @@ GoRouter appRouter(AppRouterRef ref) {
     },
 
     routes: [
-      // ════════════════════════════════════════════════════════════════════
-      // SPLASH SCREEN
-      // ════════════════════════════════════════════════════════════════════
       GoRoute(
         path: Routes.splash,
         name: 'splash',
-        builder: (context, state) => const SplashScreen(),
+        builder: (_, __) => const SplashScreen(),
       ),
-
-      // ════════════════════════════════════════════════════════════════════
-      // AUTH ROUTES
-      // ════════════════════════════════════════════════════════════════════
-      // GoRoute(
-      //   path: Routes.login,
-      //   name: 'login',
-      //   builder: (context, state) => const LoginScreen(),
-      // ),
+      GoRoute(
+        path: Routes.login,
+        name: 'login',
+        builder: (_, __) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: Routes.register,
+        name: 'register',
+        builder: (_, __) => const RegisterScreen(),
+      ),
+      GoRoute(
+        path: Routes.home,
+        name: 'home',
+        builder: (_, __) => const Scaffold(
+          body: Center(child: Text('Home')),
+        ),
+      ),
     ],
 
     // ════════════════════════════════════════════════════════════════════

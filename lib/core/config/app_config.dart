@@ -12,7 +12,7 @@ class AppConfig {
   // ═══════════════════════════════════════════════════════════════════════════
   static String get baseUrl {
     return switch (_env) {
-      Environment.dev => 'http://localhost:8080/api/v1',
+      Environment.dev => 'http://10.0.2.2:3000/api/v1',
       Environment.staging => 'https://staging-api.anchorapp.io/api/v1',
       Environment.prod => 'https://api.anchorapp.io/api/v1',
     };
@@ -26,7 +26,12 @@ class AppConfig {
   static String get authSetUsername => '/auth/username';
   static String get authCheckUsername =>
       '/auth/username/check'; // ?username=xxx
-  static String get authRefresh => '/auth/refresh';
+  static const String register = '/auth/register';
+  static const String login = '/auth/login';
+  static const String refresh = '/auth/refresh';
+  static const String logout = '/auth/logout';
+  static const String forgotPassword = '/auth/forgot-password';
+  static const String resetPassword = '/auth/reset-password';
 
   // ═══════════════════════════════════════════════════════════════════════════
   // 2. ANCHORS (11 endpoints)

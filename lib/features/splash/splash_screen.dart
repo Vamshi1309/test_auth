@@ -17,10 +17,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _navigate();
+    _init();
   }
 
-  Future<void> _navigate() async {
+  Future<void> _init() async {
     await Future.delayed(const Duration(seconds: 2));
 
     if (!mounted) return;
@@ -28,9 +28,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     final prefs = await ref.read(sharedPrefsProvider.future);
     final isLoggedIn = await prefs.isLoggedIn();
 
-    if (mounted) {
-      context.go(isLoggedIn ? Routes.home : Routes.login);
-    }
+    if (!mounted) return;
+
+    // Simple — just go where the token says
+    context.go(isLoggedIn ? Routes.home : Routes.login);
   }
 
   @override
