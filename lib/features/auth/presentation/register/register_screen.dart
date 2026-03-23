@@ -5,7 +5,10 @@ class RegisterScreen extends StatelessWidget {
 
   @override
   Widget build(Object context) {
-    // TODO: implement build
-    throw UnimplementedError();
+    return Scaffold(
+      body: Center(
+        child: Text("Helloo"),
+      ),
+    );
   }
 }
