@@ -216,16 +216,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Widget _buildButton(String text) {
     return ElevatedButton(
-      onPressed: () {
+      onPressed: () async {
         if (text == "Sign In") {
-          ref.read(authNotifierProvider.notifier).login(
+          await ref.read(authNotifierProvider.notifier).login(
               email: emailController.text, password: passwordController.text);
         } else {
-          ref.read(authNotifierProvider.notifier).register(
+          await ref.read(authNotifierProvider.notifier).register(
                 name: nameController.text,
                 email: emailController.text,
                 password: passwordController.text,
               );
+          if (mounted) {
+            setState(() {
+              selectedIndex = 0;
+              nameController.clear();
+              passwordController.clear();
+              emailController.clear();
+            });
+          }
         }
       },
       style: ButtonStyle(

@@ -49,7 +49,6 @@ class AuthNotifier extends _$AuthNotifier {
       await _repo.register(
         RegisterRequest(name: name, email: email, password: password),
       );
-      state = const AuthState.authenticated();
     } on Failure catch (f) {
       state = AuthState.error(_toMessage(f));
     }

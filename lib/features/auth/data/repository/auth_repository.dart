@@ -43,6 +43,9 @@ class AuthRepository {
   }
 
   Future<void> logout() async {
+    final prefs = await _ref.read(sharedPrefsProvider.future);
+    await prefs.clearAuth();
+    await prefs.setLoggedIn(false);
     try {
       await _api.post(
         AppConfig.logout,
@@ -50,11 +53,7 @@ class AuthRepository {
       );
     } catch (_) {
       // Intentionally ignored — server logout failure is non-critical
-    } finally {
-      final prefs = await _ref.read(sharedPrefsProvider.future);
-      await prefs.clearAuth();
-      await prefs.setLoggedIn(false);
-    }
+    } 
   }
 
   Future<bool> isLoggedIn() async {

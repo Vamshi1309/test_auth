@@ -4,9 +4,6 @@ import 'package:pod/core/config/app_config.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:pod/core/network/interceptors/logging_interceptor.dart';
 import 'package:pod/core/utils/helpers/shared_prefs.dart';
-import 'package:pod/core/di/locator.dart';
-import 'package:pod/core/routing/routes.dart';
-import 'package:go_router/go_router.dart';
 
 part 'dio_provider.g.dart';
 
@@ -51,77 +48,74 @@ Dio dio(DioRef ref) {
         return handler.next(options);
       },
       onResponse: (response, handler) async {
+        final prefs = await ref.read(sharedPrefsProvider.future);
+
         // Auto-save new token/session from headers
         final newToken = response.headers.value('token');
         final newSession = response.headers.value('sessionid');
 
-        final prefs = await ref.read(sharedPrefsProvider.future);
         if (newToken != null) {
           await prefs.saveToken(newToken);
         }
         if (newSession != null) {
           await prefs.saveSessionId(newSession);
         }
+        if (response.requestOptions.path.contains(AppConfig.refresh)) {
+          return handler.next(response);
+        }
 
-        return handler.next(response);
-      },
-      // ✅ NEW: Handle 401 and attempt token refresh
-      onError: (error, handler) async {
-        if (error.response?.statusCode == 401) {
-          final prefs = await ref.read(sharedPrefsProvider.future);
+        if (response.statusCode == 401) {
           final refreshToken = await prefs.getRefreshToken();
 
           if (refreshToken != null) {
             try {
-              // Create separate Dio instance for refresh (no interceptors)
-              final refreshDio = Dio(
-                BaseOptions(
-                  baseUrl: AppConfig.baseUrl,
-                  connectTimeout: const Duration(seconds: 10),
-                  receiveTimeout: const Duration(seconds: 10),
-                ),
-              );
+              final refreshDio = Dio(BaseOptions(baseUrl: AppConfig.baseUrl));
 
-              // Call refresh endpoint
-              final response = await refreshDio.post(
+              final refreshResponse = await refreshDio.post(
                 AppConfig.refresh,
                 data: {'refreshToken': refreshToken},
               );
 
-              if (response.statusCode == 200 &&
-                  response.data['success'] == true) {
-                final data = response.data['data'];
-                final newToken = data['token'] ?? data['accessToken'];
+              if (refreshResponse.statusCode == 200 &&
+                  refreshResponse.data['success'] == true) {
+                final data = refreshResponse.data['data'];
+                final newToken = data['token'];
                 final newRefreshToken = data['refreshToken'];
 
-                if (newToken != null) {
-                  // Save new tokens
-                  await prefs.saveToken(newToken);
-                  if (newRefreshToken != null) {
-                    await prefs.saveRefreshToken(newRefreshToken);
-                  }
+                if (newRefreshToken != null) {
+                  await prefs.saveRefreshToken(newRefreshToken);
+                }
 
-                  // Retry original request with new token
-                  error.requestOptions.headers['Authorization'] =
+                if (newToken != null) {
+                  response.requestOptions.headers['Authorization'] =
                       'Bearer $newToken';
-                  final retryResponse = await dio.fetch(error.requestOptions);
+                  await prefs.saveToken(newToken);
+                  final retryResponse =
+                      await dio.fetch(response.requestOptions);
                   return handler.resolve(retryResponse);
                 }
+
+                await prefs.clearAuth();
+                await prefs.setLoggedIn(false);
+                return handler.next(response);
+              } else {
+                await prefs.clearAuth();
+                await prefs.setLoggedIn(false);
+                return handler.next(response);
               }
             } catch (_) {
-              // Refresh failed - logout user
               await prefs.clearAuth();
               await prefs.setLoggedIn(false);
-
-              final context = ref.read(navigatorKeyProvider).currentContext;
-              if (context != null && context.mounted) {
-                context.go(Routes.login);
-              }
+              return handler.next(response);
             }
+          } else {
+            await prefs.clearAuth();
+            await prefs.setLoggedIn(false);
+            return handler.next(response);
           }
         }
 
-        return handler.next(error);
+        return handler.next(response);
       },
     ),
   );

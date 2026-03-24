@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pod/features/auth/presentation/login/login_screen.dart';
-import 'package:pod/features/auth/presentation/register/register_screen.dart';
+import 'package:pod/features/home/home_screen.dart';
 // import 'package:pod/features/auth/login_screen.dart';
 import 'package:pod/features/splash/splash_screen.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -35,7 +35,7 @@ GoRouter appRouter(AppRouterRef ref) {
       final prefs = await ref.read(sharedPrefsProvider.future);
       final isLoggedIn = await prefs.isLoggedIn();
       final isAuthRoute =
-          currentPath == Routes.login || currentPath == Routes.login;
+          currentPath == Routes.login || currentPath == Routes.register;
 
       // Redirect logic for protected routes
       if (!isLoggedIn && !isAuthRoute) {
@@ -61,17 +61,9 @@ GoRouter appRouter(AppRouterRef ref) {
         builder: (_, __) => const LoginScreen(),
       ),
       GoRoute(
-        path: Routes.register,
-        name: 'register',
-        builder: (_, __) => const RegisterScreen(),
-      ),
-      GoRoute(
-        path: Routes.home,
-        name: 'home',
-        builder: (_, __) => const Scaffold(
-          body: Center(child: Text('Home')),
-        ),
-      ),
+          path: Routes.home,
+          name: 'home',
+          builder: (_, __) => const HomeScreen()),
     ],
 
     // ════════════════════════════════════════════════════════════════════
