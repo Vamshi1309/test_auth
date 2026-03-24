@@ -24,7 +24,7 @@ class AuthRepository {
     await _api.post(
       AppConfig.login,
       data: req.toJson(),
-      fromJsonT: (_) {},
+      fromJsonT: (_) => true,
     );
 
     final prefs = await _ref.read(sharedPrefsProvider.future);
@@ -35,7 +35,7 @@ class AuthRepository {
     await _api.post(
       AppConfig.register,
       data: req.toJson(),
-      fromJsonT: (_) {},
+      fromJsonT: (_) => true,
     );
 
     final prefs = await _ref.read(sharedPrefsProvider.future);

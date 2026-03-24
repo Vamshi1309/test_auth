@@ -1,5 +1,8 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:pod/core/routing/routes.dart';
 import 'package:pod/features/auth/providers/auth_provider.dart';
 import 'package:pod/features/auth/providers/auth_state.dart';
 
@@ -20,75 +23,104 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
+
+    ref.listen(authNotifierProvider, (previous, next) {
+      next.whenOrNull(
+        authenticated: () => context.go(Routes.home),
+        error: (message) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(message),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ));
+        },
+      );
+    });
+
+    final isLoading = authState.maybeWhen(
+      loading: () => true,
+      orElse: () => false,
+    );
+
     return Scaffold(
-      body: Container(
-        padding: EdgeInsets.all(8),
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFFE6F4EA), // light green
-                Color(0xFFF8FBF9), // near white
-                Colors.white,
-              ]),
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              SizedBox(height: 50),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+      body: Stack(
+        children: [
+          Container(
+            padding: EdgeInsets.all(8),
+            width: double.infinity,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFFE6F4EA), // light green
+                    Color(0xFFF8FBF9), // near white
+                    Colors.white,
+                  ]),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Image.asset(
-                    'assets/image/logo.png',
-                    width: 50,
-                    height: 50,
+                  SizedBox(height: 50),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset(
+                        'assets/image/logo.png',
+                        width: 50,
+                        height: 50,
+                      ),
+                      SizedBox(width: 15),
+                      Text(
+                        "FinVault",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 37,
+                        ),
+                      ),
+                    ],
                   ),
-                  SizedBox(width: 15),
-                  Text(
-                    "FinVault",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 37,
-                    ),
-                  ),
+                  SizedBox(height: 50),
+                  Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Color.fromARGB(255, 194, 231, 203),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          segmentedController(),
+                          SizedBox(height: 30),
+                          if (selectedIndex == 0) ...[
+                            _buildLoginForm()
+                          ] else ...[
+                            _buildRegisterForm()
+                          ]
+                        ],
+                      )),
                 ],
               ),
-              SizedBox(height: 50),
-              authState.maybeWhen(
-                loading: () => CircularProgressIndicator(),
-                error: (message) => Text(
-                  message,
-                  style: TextStyle(color: Colors.red),
-                ),
-                orElse: () => SizedBox(),
-              ),
-              Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Color.fromARGB(255, 194, 231, 203),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      segmentedController(),
-                      SizedBox(height: 30),
-                      if (selectedIndex == 0) ...[
-                        _buildLoginForm()
-                      ] else ...[
-                        _buildRegisterForm()
-                      ]
-                    ],
-                  )),
-            ],
+            ),
           ),
-        ),
+          if (isLoading)
+            Positioned.fill(
+                child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+              child: Container(
+                // ignore: deprecated_member_use
+                color: Colors.black.withOpacity(0.2),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    color: Colors.green,
+                  ),
+                ),
+              ),
+            )),
+        ],
       ),
     );
   }
