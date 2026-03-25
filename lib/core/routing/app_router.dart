@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pod/features/auth/presentation/login/login_screen.dart';
+import 'package:pod/features/forgot%20password/forgot_password_screen.dart';
 import 'package:pod/features/home/home_screen.dart';
 // import 'package:pod/features/auth/login_screen.dart';
 import 'package:pod/features/splash/splash_screen.dart';
@@ -16,6 +17,8 @@ part 'app_router.g.dart';
 @riverpod
 GoRouter appRouter(AppRouterRef ref) {
   final navigatorKey = ref.watch(navigatorKeyProvider);
+
+  ref.keepAlive();
 
   return GoRouter(
     navigatorKey: navigatorKey,
@@ -34,8 +37,9 @@ GoRouter appRouter(AppRouterRef ref) {
       // Check auth state for other routes
       final prefs = await ref.read(sharedPrefsProvider.future);
       final isLoggedIn = await prefs.isLoggedIn();
-      final isAuthRoute =
-          currentPath == Routes.login || currentPath == Routes.register;
+      final isAuthRoute = currentPath == Routes.login ||
+          currentPath == Routes.register ||
+          currentPath == Routes.forgotPassword;
 
       // Redirect logic for protected routes
       if (!isLoggedIn && !isAuthRoute) {
@@ -64,6 +68,11 @@ GoRouter appRouter(AppRouterRef ref) {
           path: Routes.home,
           name: 'home',
           builder: (_, __) => const HomeScreen()),
+      GoRoute(
+        path: Routes.forgotPassword,
+        name: 'forgotPassword',
+        builder: (_, __) => const ForgotPasswordScreen(),
+      ),
     ],
 
     // ════════════════════════════════════════════════════════════════════

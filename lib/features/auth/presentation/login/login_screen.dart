@@ -18,7 +18,75 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final passwordController = TextEditingController();
   final nameController = TextEditingController();
 
+  final _formKey = GlobalKey<FormState>();
+
+  final Map<String, String?> _fieldErrors = {'email': null, 'password': null};
+
   int selectedIndex = 0;
+
+  void _handleBackendError(String msg) {
+    final lower = msg.toLowerCase();
+
+    setState(() {
+      _fieldErrors['email'] = null;
+      _fieldErrors['password'] = null;
+
+      if (lower.contains('email') || lower.contains('valid email')) {
+        _fieldErrors['email'] = msg;
+      } else if (lower.contains('password') || lower.contains('strong')) {
+        _fieldErrors['password'] = msg;
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(msg),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    });
+  }
+
+  String? _validateEmail(String? value) {
+    if (value == null || value.trim().isEmpty) return 'Email is required';
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(value.trim()))
+      return 'Enter a valid email address';
+    return null;
+  }
+
+  String? _validateName(String? value) {
+    if (value == null || value.isEmpty) return 'Full name is required';
+    if (value.trim().length < 2) return 'Enter a valid name';
+    return null;
+  }
+
+  void _showSuccessSnackbar(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Row(
+        children: [
+          Icon(Icons.check_circle, color: Colors.white, size: 18),
+          SizedBox(width: 8),
+          Text(msg),
+        ],
+      ),
+      backgroundColor: Colors.green[700],
+      behavior: SnackBarBehavior.floating,
+      duration: Duration(seconds: 2),
+    ));
+  }
+
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) return 'Password is required';
+    if (value.length < 8) return 'Must be at least 8 characters';
+    if (!value.contains(RegExp(r'[A-Z]')))
+      return 'Must contain at least one uppercase letter';
+    if (!value.contains(RegExp(r'[a-z]')))
+      return 'Must contain at least one lowercase letter';
+    if (!value.contains(RegExp(r'[0-9]')))
+      return 'Must contain at least one number';
+    if (!value.contains(RegExp(r'[!@#\$&*~%^]')))
+      return 'Must contain at least one special character';
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,14 +94,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     ref.listen(authNotifierProvider, (previous, next) {
       next.whenOrNull(
-        authenticated: () => context.go(Routes.home),
-        error: (message) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(message),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ));
+        authenticated: (message) {
+          if (selectedIndex == 1) {
+            _showSuccessSnackbar(message ?? 'Account created successfully!');
+            nameController.clear();
+            emailController.clear();
+            passwordController.clear();
+            setState(() => selectedIndex = 0);
+          } else {
+            _showSuccessSnackbar(message ?? 'Welcome back!');
+            context.go(Routes.home);
+          }
         },
+        error: (message) => _handleBackendError(message),
       );
     });
 
@@ -133,34 +206,41 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         color: Colors.white54,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "Create Account",
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 35,
-            ),
-          ),
-          SizedBox(height: 10),
-          Text(
-            "Start managing your wealth today",
-            style: TextStyle(
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Create Account",
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 15,
-                color: Colors.grey[600]),
-          ),
-          SizedBox(height: 30),
-          _buildTextField("Full Name", "e.g. Vamshi Dasari", nameController),
-          SizedBox(height: 20),
-          _buildTextField("Email", "e.g. example@gmail.com", emailController),
-          SizedBox(height: 20),
-          _buildTextField(
-              "Password", "Enter your password", passwordController),
-          SizedBox(height: 30),
-          _buildButton("Create Account")
-        ],
+                fontSize: 35,
+              ),
+            ),
+            SizedBox(height: 10),
+            Text(
+              "Start managing your wealth today",
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                  color: Colors.grey[600]),
+            ),
+            SizedBox(height: 30),
+            _buildTextField("Full Name", "your name", nameController,
+                validator: _validateName),
+            SizedBox(height: 20),
+            _buildTextField("Email", "e.g. example@gmail.com", emailController,
+                validator: _validateEmail, errorText: _fieldErrors['email']),
+            SizedBox(height: 20),
+            _buildTextField(
+                "Password", "Enter your password", passwordController,
+                validator: _validatePassword,
+                errorText: _fieldErrors['password']),
+            SizedBox(height: 30),
+            _buildButton("Create Account")
+          ],
+        ),
       ),
     );
   }
@@ -173,43 +253,53 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         color: Colors.white54,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "Welcome back",
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 35,
-            ),
-          ),
-          SizedBox(height: 10),
-          Text(
-            "Securely access your financial portfolio",
-            style: TextStyle(
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Welcome back",
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 15,
-                color: Colors.grey[600]),
-          ),
-          SizedBox(height: 30),
-          _buildTextField("Email", "e.g. example@gmail.com", emailController),
-          SizedBox(height: 20),
-          _buildTextField(
-              "Password", "Enter your password", passwordController),
-          SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Text(
-              "Forgot Password?",
+                fontSize: 35,
+              ),
+            ),
+            SizedBox(height: 10),
+            Text(
+              "Securely access your financial portfolio",
               style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: Colors.green),
+                  fontSize: 15,
+                  color: Colors.grey[600]),
             ),
-          ),
-          SizedBox(height: 30),
-          _buildButton("Sign In")
-        ],
+            SizedBox(height: 30),
+            _buildTextField("Email", "e.g. example@gmail.com", emailController,
+                validator: _validateEmail, errorText: _fieldErrors['email']),
+            SizedBox(height: 20),
+            _buildTextField(
+                "Password", "Enter your password", passwordController,
+                validator: _validatePassword,
+                errorText: _fieldErrors['password']),
+            SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                  onPressed: () {
+                    context.go(Routes.forgotPassword);
+                  },
+                  child: Text(
+                    "Forgot Password?",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Colors.green),
+                  )),
+            ),
+            SizedBox(height: 30),
+            _buildButton("Sign In")
+          ],
+        ),
       ),
     );
   }
@@ -217,6 +307,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget _buildButton(String text) {
     return ElevatedButton(
       onPressed: () async {
+        if (!_formKey.currentState!.validate()) return;
         if (text == "Sign In") {
           await ref.read(authNotifierProvider.notifier).login(
               email: emailController.text, password: passwordController.text);
@@ -226,14 +317,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 email: emailController.text,
                 password: passwordController.text,
               );
-          if (mounted) {
-            setState(() {
-              selectedIndex = 0;
-              nameController.clear();
-              passwordController.clear();
-              emailController.clear();
-            });
-          }
         }
       },
       style: ButtonStyle(
@@ -248,7 +331,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Widget _buildTextField(
-      String title, String hint, TextEditingController controller) {
+      String title, String hint, TextEditingController controller,
+      {String? Function(String?)? validator, String? errorText}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -260,11 +344,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
         ),
         SizedBox(height: 8),
-        TextField(
+        TextFormField(
           controller: controller,
+          validator: validator,
+          obscureText: title == 'Password',
+          onChanged: (_) {
+            setState(() {
+              if (title == 'Email') _fieldErrors['email'] = null;
+              if (title == 'Password') _fieldErrors['password'] = null;
+            });
+          },
+          autovalidateMode: AutovalidateMode.onUserInteraction,
           decoration: InputDecoration(
             isDense: true,
             fillColor: const Color.fromARGB(255, 205, 221, 206),
+            errorText: errorText,
+            errorStyle: TextStyle(fontSize: 12, color: Colors.red[700]),
             focusedBorder: OutlineInputBorder(
                 borderRadius: const BorderRadius.all(Radius.circular(8.0)),
                 borderSide: BorderSide(

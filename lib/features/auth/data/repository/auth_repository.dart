@@ -20,7 +20,7 @@ class AuthRepository {
       : _api = api,
         _ref = ref;
 
-  Future<void> login(LoginRequest req) async {
+  Future<String> login(LoginRequest req) async {
     await _api.post(
       AppConfig.login,
       data: req.toJson(),
@@ -29,9 +29,11 @@ class AuthRepository {
 
     final prefs = await _ref.read(sharedPrefsProvider.future);
     await prefs.setLoggedIn(true);
+
+    return 'Welcome back!';
   }
 
-  Future<void> register(RegisterRequest req) async {
+  Future<String> register(RegisterRequest req) async {
     await _api.post(
       AppConfig.register,
       data: req.toJson(),
@@ -40,6 +42,16 @@ class AuthRepository {
 
     final prefs = await _ref.read(sharedPrefsProvider.future);
     await prefs.setLoggedIn(true);
+
+    return 'Account created successfully!';
+  }
+
+  Future<void> forgotPassword(String email) async {
+    await _api.post(
+      AppConfig.forgotPassword,
+      data: {'email': email},
+      fromJsonT: (_) => true,
+    );
   }
 
   Future<void> logout() async {
@@ -53,7 +65,7 @@ class AuthRepository {
       );
     } catch (_) {
       // Intentionally ignored — server logout failure is non-critical
-    } 
+    }
   }
 
   Future<bool> isLoggedIn() async {

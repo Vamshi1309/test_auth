@@ -55,6 +55,7 @@ extension AuthStatePatterns on AuthState {
     TResult Function(_Authenticated value)? authenticated,
     TResult Function(_Unauthenticated value)? unauthenticated,
     TResult Function(_Error value)? error,
+    TResult Function(_PasswordResetSent value)? passwordResetSent,
     required TResult orElse(),
   }) {
     final _that = this;
@@ -69,6 +70,8 @@ extension AuthStatePatterns on AuthState {
         return unauthenticated(_that);
       case _Error() when error != null:
         return error(_that);
+      case _PasswordResetSent() when passwordResetSent != null:
+        return passwordResetSent(_that);
       case _:
         return orElse();
     }
@@ -94,6 +97,7 @@ extension AuthStatePatterns on AuthState {
     required TResult Function(_Authenticated value) authenticated,
     required TResult Function(_Unauthenticated value) unauthenticated,
     required TResult Function(_Error value) error,
+    required TResult Function(_PasswordResetSent value) passwordResetSent,
   }) {
     final _that = this;
     switch (_that) {
@@ -107,6 +111,8 @@ extension AuthStatePatterns on AuthState {
         return unauthenticated(_that);
       case _Error():
         return error(_that);
+      case _PasswordResetSent():
+        return passwordResetSent(_that);
     }
   }
 
@@ -129,6 +135,7 @@ extension AuthStatePatterns on AuthState {
     TResult? Function(_Authenticated value)? authenticated,
     TResult? Function(_Unauthenticated value)? unauthenticated,
     TResult? Function(_Error value)? error,
+    TResult? Function(_PasswordResetSent value)? passwordResetSent,
   }) {
     final _that = this;
     switch (_that) {
@@ -142,6 +149,8 @@ extension AuthStatePatterns on AuthState {
         return unauthenticated(_that);
       case _Error() when error != null:
         return error(_that);
+      case _PasswordResetSent() when passwordResetSent != null:
+        return passwordResetSent(_that);
       case _:
         return null;
     }
@@ -163,9 +172,10 @@ extension AuthStatePatterns on AuthState {
   TResult maybeWhen<TResult extends Object?>({
     TResult Function()? initial,
     TResult Function()? loading,
-    TResult Function()? authenticated,
+    TResult Function(String? message)? authenticated,
     TResult Function()? unauthenticated,
     TResult Function(String message)? error,
+    TResult Function()? passwordResetSent,
     required TResult orElse(),
   }) {
     final _that = this;
@@ -175,11 +185,13 @@ extension AuthStatePatterns on AuthState {
       case _Loading() when loading != null:
         return loading();
       case _Authenticated() when authenticated != null:
-        return authenticated();
+        return authenticated(_that.message);
       case _Unauthenticated() when unauthenticated != null:
         return unauthenticated();
       case _Error() when error != null:
         return error(_that.message);
+      case _PasswordResetSent() when passwordResetSent != null:
+        return passwordResetSent();
       case _:
         return orElse();
     }
@@ -202,9 +214,10 @@ extension AuthStatePatterns on AuthState {
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
-    required TResult Function() authenticated,
+    required TResult Function(String? message) authenticated,
     required TResult Function() unauthenticated,
     required TResult Function(String message) error,
+    required TResult Function() passwordResetSent,
   }) {
     final _that = this;
     switch (_that) {
@@ -213,11 +226,13 @@ extension AuthStatePatterns on AuthState {
       case _Loading():
         return loading();
       case _Authenticated():
-        return authenticated();
+        return authenticated(_that.message);
       case _Unauthenticated():
         return unauthenticated();
       case _Error():
         return error(_that.message);
+      case _PasswordResetSent():
+        return passwordResetSent();
     }
   }
 
@@ -237,9 +252,10 @@ extension AuthStatePatterns on AuthState {
   TResult? whenOrNull<TResult extends Object?>({
     TResult? Function()? initial,
     TResult? Function()? loading,
-    TResult? Function()? authenticated,
+    TResult? Function(String? message)? authenticated,
     TResult? Function()? unauthenticated,
     TResult? Function(String message)? error,
+    TResult? Function()? passwordResetSent,
   }) {
     final _that = this;
     switch (_that) {
@@ -248,11 +264,13 @@ extension AuthStatePatterns on AuthState {
       case _Loading() when loading != null:
         return loading();
       case _Authenticated() when authenticated != null:
-        return authenticated();
+        return authenticated(_that.message);
       case _Unauthenticated() when unauthenticated != null:
         return unauthenticated();
       case _Error() when error != null:
         return error(_that.message);
+      case _PasswordResetSent() when passwordResetSent != null:
+        return passwordResetSent();
       case _:
         return null;
     }
@@ -302,20 +320,64 @@ class _Loading implements AuthState {
 /// @nodoc
 
 class _Authenticated implements AuthState {
-  const _Authenticated();
+  const _Authenticated({this.message});
+
+  final String? message;
+
+  /// Create a copy of AuthState
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @pragma('vm:prefer-inline')
+  _$AuthenticatedCopyWith<_Authenticated> get copyWith =>
+      __$AuthenticatedCopyWithImpl<_Authenticated>(this, _$identity);
 
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
-        (other.runtimeType == runtimeType && other is _Authenticated);
+        (other.runtimeType == runtimeType &&
+            other is _Authenticated &&
+            (identical(other.message, message) || other.message == message));
   }
 
   @override
-  int get hashCode => runtimeType.hashCode;
+  int get hashCode => Object.hash(runtimeType, message);
 
   @override
   String toString() {
-    return 'AuthState.authenticated()';
+    return 'AuthState.authenticated(message: $message)';
+  }
+}
+
+/// @nodoc
+abstract mixin class _$AuthenticatedCopyWith<$Res>
+    implements $AuthStateCopyWith<$Res> {
+  factory _$AuthenticatedCopyWith(
+          _Authenticated value, $Res Function(_Authenticated) _then) =
+      __$AuthenticatedCopyWithImpl;
+  @useResult
+  $Res call({String? message});
+}
+
+/// @nodoc
+class __$AuthenticatedCopyWithImpl<$Res>
+    implements _$AuthenticatedCopyWith<$Res> {
+  __$AuthenticatedCopyWithImpl(this._self, this._then);
+
+  final _Authenticated _self;
+  final $Res Function(_Authenticated) _then;
+
+  /// Create a copy of AuthState
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  $Res call({
+    Object? message = freezed,
+  }) {
+    return _then(_Authenticated(
+      message: freezed == message
+          ? _self.message
+          : message // ignore: cast_nullable_to_non_nullable
+              as String?,
+    ));
   }
 }
 
@@ -397,6 +459,26 @@ class __$ErrorCopyWithImpl<$Res> implements _$ErrorCopyWith<$Res> {
           : message // ignore: cast_nullable_to_non_nullable
               as String,
     ));
+  }
+}
+
+/// @nodoc
+
+class _PasswordResetSent implements AuthState {
+  const _PasswordResetSent();
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType && other is _PasswordResetSent);
+  }
+
+  @override
+  int get hashCode => runtimeType.hashCode;
+
+  @override
+  String toString() {
+    return 'AuthState.passwordResetSent()';
   }
 }
 

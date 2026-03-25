@@ -31,8 +31,9 @@ class AuthNotifier extends _$AuthNotifier {
     state = const AuthState.loading();
 
     try {
-      await _repo.login(LoginRequest(email: email, password: password));
-      state = const AuthState.authenticated();
+      final message =
+          await _repo.login(LoginRequest(email: email, password: password));
+      state = AuthState.authenticated(message: message);
     } on Failure catch (f) {
       state = AuthState.error(_toMessage(f));
     }
@@ -46,9 +47,21 @@ class AuthNotifier extends _$AuthNotifier {
     state = const AuthState.loading();
 
     try {
-      await _repo.register(
+      final message = await _repo.register(
         RegisterRequest(name: name, email: email, password: password),
       );
+      state = AuthState.authenticated(message: message); // ← was missing!
+    } on Failure catch (f) {
+      state = AuthState.error(_toMessage(f));
+    }
+  }
+
+  Future<void> forgotPassword({required String email}) async {
+    state = const AuthState.loading();
+
+    try {
+      await _repo.forgotPassword(email);
+      state = const AuthState.passwordResetSent();
     } on Failure catch (f) {
       state = AuthState.error(_toMessage(f));
     }
