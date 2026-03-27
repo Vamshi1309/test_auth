@@ -67,9 +67,4 @@ class AuthRepository {
       // Intentionally ignored — server logout failure is non-critical
     }
   }
-
-  Future<bool> isLoggedIn() async {
-    final prefs = await _ref.read(sharedPrefsProvider.future);
-    return prefs.isLoggedIn();
-  }
 }

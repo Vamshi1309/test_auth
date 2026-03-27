@@ -1,4 +1,5 @@
 import 'package:pod/core/error/failures.dart';
+import 'package:pod/core/utils/helpers/shared_prefs.dart';
 import 'package:pod/features/auth/data/models/auth_request.dart';
 import 'package:pod/features/auth/data/repository/auth_repository.dart';
 import 'package:pod/features/auth/providers/auth_state.dart';
@@ -15,13 +16,13 @@ class AuthNotifier extends _$AuthNotifier {
   Future<void> checkAuth() async {
     state = const AuthState.loading();
 
-    final loggedIn = await _repo.isLoggedIn();
+    // Read SharedPrefs directly — no need to go through repo
+    final prefs = await ref.read(sharedPrefsProvider.future);
+    final loggedIn = await prefs.isLoggedIn();
 
     state = loggedIn
         ? const AuthState.authenticated()
         : const AuthState.unauthenticated();
-
-    // GoRouter's redirect watches this state and navigates automatically
   }
 
   Future<void> login({
@@ -75,7 +76,9 @@ class AuthNotifier extends _$AuthNotifier {
   }
 
   String _toMessage(Failure f) => switch (f) {
-        UnauthorizedFailure() => 'Invalid email or password',
+        // Prefer backend message (e.g. "Invalid credentials") for 401s.
+        // UI can still map it to a specific field if desired.
+        UnauthorizedFailure() => f.message,
         ValidationFailure() => f.message,
         NetworkFailure() => 'No internet connection',
         ServerFailure() => f.message,

@@ -9,6 +9,7 @@ class ConnectivityStatus extends _$ConnectivityStatus {
   @override
   Stream<bool> build() {
     return Connectivity().onConnectivityChanged.map(
+          // ignore: unrelated_type_equality_checks
           (result) => result != ConnectivityResult.none,
         );
   }
@@ -16,6 +17,7 @@ class ConnectivityStatus extends _$ConnectivityStatus {
   // Sync check (optional, but useful)
   Future<bool> get isConnected async {
     final result = await Connectivity().checkConnectivity();
+    // ignore: unrelated_type_equality_checks
     return result != ConnectivityResult.none;
   }
 }

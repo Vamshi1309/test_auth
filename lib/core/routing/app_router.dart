@@ -1,6 +1,7 @@
 // lib/core/routing/app_router.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pod/core/network/router%20notifier/router_notifier.dart';
 import 'package:pod/features/auth/presentation/login/login_screen.dart';
 import 'package:pod/features/forgot%20password/forgot_password_screen.dart';
 import 'package:pod/features/home/home_screen.dart';
@@ -22,35 +23,43 @@ GoRouter appRouter(AppRouterRef ref) {
 
   return GoRouter(
     navigatorKey: navigatorKey,
+    // Refresh routing decisions when auth/force-logout changes,
+    // without recreating the whole router (which would jump to initialLocation).
+    refreshListenable: ref.watch(routerNotifierProvider),
     debugLogDiagnostics: true,
     initialLocation: Routes.splash,
 
     // ✅ FIXED: Auth redirect logic
     redirect: (context, state) async {
-      final currentPath = state.matchedLocation;
+      try {
+        final currentPath = state.matchedLocation;
 
-      // ✅ CRITICAL: Always allow splash to show first
-      if (currentPath == Routes.splash) {
-        return null; // Let splash screen handle its own navigation
+        // ✅ CRITICAL: Always allow splash to show first
+        if (currentPath == Routes.splash) {
+          return null; // Let splash screen handle its own navigation
+        }
+
+        // Check auth state for other routes
+        final prefs = await ref.read(sharedPrefsProvider.future);
+        final isLoggedIn = await prefs.isLoggedIn();
+        final isAuthRoute = currentPath == Routes.login ||
+            currentPath == Routes.register ||
+            currentPath == Routes.forgotPassword;
+
+        // Redirect logic for protected routes
+        if (!isLoggedIn && !isAuthRoute) {
+          return Routes.login; // Not logged in → go to login
+        }
+
+        if (isLoggedIn && isAuthRoute) {
+          return Routes.home; // Already logged in → go to home
+        }
+
+        return null; // No redirect needed
+      } catch (_) {
+        // If SharedPrefs (or any redirect dependency) fails, prefer a safe route.
+        return Routes.login;
       }
-
-      // Check auth state for other routes
-      final prefs = await ref.read(sharedPrefsProvider.future);
-      final isLoggedIn = await prefs.isLoggedIn();
-      final isAuthRoute = currentPath == Routes.login ||
-          currentPath == Routes.register ||
-          currentPath == Routes.forgotPassword;
-
-      // Redirect logic for protected routes
-      if (!isLoggedIn && !isAuthRoute) {
-        return Routes.login; // Not logged in → go to login
-      }
-
-      if (isLoggedIn && isAuthRoute) {
-        return Routes.home; // Already logged in → go to home
-      }
-
-      return null; // No redirect needed
     },
 
     routes: [
@@ -85,7 +94,6 @@ GoRouter appRouter(AppRouterRef ref) {
 // ══════════════════════════════════════════════════════════════════════════
 // ERROR SCREEN
 // ══════════════════════════════════════════════════════════════════════════
-
 class ErrorScreen extends StatelessWidget {
   final Exception? error;
 

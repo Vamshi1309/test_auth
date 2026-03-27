@@ -2,6 +2,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pod/core/common_widgets/app_button.dart';
+import 'package:pod/core/common_widgets/app_text_field.dart';
 import 'package:pod/core/routing/routes.dart';
 import 'package:pod/features/auth/providers/auth_provider.dart';
 import 'package:pod/features/auth/providers/auth_state.dart';
@@ -25,31 +27,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   int selectedIndex = 0;
 
   void _handleBackendError(String msg) {
-    final lower = msg.toLowerCase();
-
     setState(() {
       _fieldErrors['email'] = null;
       _fieldErrors['password'] = null;
-
-      if (lower.contains('email') || lower.contains('valid email')) {
-        _fieldErrors['email'] = msg;
-      } else if (lower.contains('password') || lower.contains('strong')) {
-        _fieldErrors['password'] = msg;
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(msg),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ));
-      }
     });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   String? _validateEmail(String? value) {
     if (value == null || value.trim().isEmpty) return 'Email is required';
     final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    if (!emailRegex.hasMatch(value.trim()))
+    if (!emailRegex.hasMatch(value.trim())) {
       return 'Enter a valid email address';
+    }
     return null;
   }
 
@@ -77,16 +74,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   String? _validatePassword(String? value) {
     if (value == null || value.isEmpty) return 'Password is required';
     if (value.length < 8) return 'Must be at least 8 characters';
-    if (!value.contains(RegExp(r'[A-Z]')))
+    if (!value.contains(RegExp(r'[A-Z]'))) {
       return 'Must contain at least one uppercase letter';
-    if (!value.contains(RegExp(r'[a-z]')))
+    }
+    if (!value.contains(RegExp(r'[a-z]'))) {
       return 'Must contain at least one lowercase letter';
-    if (!value.contains(RegExp(r'[0-9]')))
+    }
+    if (!value.contains(RegExp(r'[0-9]'))) {
       return 'Must contain at least one number';
-    if (!value.contains(RegExp(r'[!@#\$&*~%^]')))
+    }
+    if (!value.contains(RegExp(r'[!@#\$&*~%^]'))) {
       return 'Must contain at least one special character';
+    }
     return null;
   }
+
+  bool isLoading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -110,90 +113,72 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       );
     });
 
-    final isLoading = authState.maybeWhen(
+    isLoading = authState.maybeWhen(
       loading: () => true,
       orElse: () => false,
     );
 
     return Scaffold(
-      body: Stack(
-        children: [
-          Container(
-            padding: EdgeInsets.all(8),
-            width: double.infinity,
-            height: double.infinity,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFFE6F4EA), // light green
-                    Color(0xFFF8FBF9), // near white
-                    Colors.white,
-                  ]),
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
+      body: Container(
+        padding: EdgeInsets.all(8),
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFFE6F4EA), // light green
+                Color(0xFFF8FBF9), // near white
+                Colors.white,
+              ]),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(height: 50),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  SizedBox(height: 50),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Image.asset(
-                        'assets/image/logo.png',
-                        width: 50,
-                        height: 50,
-                      ),
-                      SizedBox(width: 15),
-                      Text(
-                        "FinVault",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 37,
-                        ),
-                      ),
-                    ],
+                  Image.asset(
+                    'assets/image/logo.png',
+                    width: 50,
+                    height: 50,
                   ),
-                  SizedBox(height: 50),
-                  Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Color.fromARGB(255, 194, 231, 203),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          segmentedController(),
-                          SizedBox(height: 30),
-                          if (selectedIndex == 0) ...[
-                            _buildLoginForm()
-                          ] else ...[
-                            _buildRegisterForm()
-                          ]
-                        ],
-                      )),
+                  SizedBox(width: 15),
+                  Text(
+                    "FinVault",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 37,
+                    ),
+                  ),
                 ],
               ),
-            ),
-          ),
-          if (isLoading)
-            Positioned.fill(
-                child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-              child: Container(
-                // ignore: deprecated_member_use
-                color: Colors.black.withOpacity(0.2),
-                child: Center(
-                  child: CircularProgressIndicator(
-                    color: Colors.green,
+              SizedBox(height: 50),
+              Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Color.fromARGB(255, 194, 231, 203),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                ),
-              ),
-            )),
-        ],
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      segmentedController(),
+                      SizedBox(height: 30),
+                      if (selectedIndex == 0) ...[
+                        _buildLoginForm()
+                      ] else ...[
+                        _buildRegisterForm()
+                      ]
+                    ],
+                  )),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -227,18 +212,49 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   color: Colors.grey[600]),
             ),
             SizedBox(height: 30),
-            _buildTextField("Full Name", "your name", nameController,
-                validator: _validateName),
+            AppTextField(
+              labelText: "Full Name",
+              hintText: "your name",
+              controller: nameController,
+              textInputAction: TextInputAction.next,
+              validator: _validateName,
+            ),
             SizedBox(height: 20),
-            _buildTextField("Email", "e.g. example@gmail.com", emailController,
-                validator: _validateEmail, errorText: _fieldErrors['email']),
+            AppTextField(
+              labelText: "Email",
+              hintText: "e.g. example@gmail.com",
+              controller: emailController,
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.next,
+              validator: _validateEmail,
+              errorText: _fieldErrors['email'],
+              onChanged: (_) => setState(() => _fieldErrors['email'] = null),
+            ),
             SizedBox(height: 20),
-            _buildTextField(
-                "Password", "Enter your password", passwordController,
-                validator: _validatePassword,
-                errorText: _fieldErrors['password']),
+            AppTextField(
+              labelText: "Password",
+              hintText: "Enter your password",
+              controller: passwordController,
+              obscureText: true,
+              textInputAction: TextInputAction.done,
+              validator: _validatePassword,
+              errorText: _fieldErrors['password'],
+              onChanged: (_) => setState(() => _fieldErrors['password'] = null),
+            ),
             SizedBox(height: 30),
-            _buildButton("Create Account")
+            AppButton(
+              text: "Create Account",
+              isLoading: isLoading,
+              onPressed: () async {
+                if (!_formKey.currentState!.validate()) return;
+
+                await ref.read(authNotifierProvider.notifier).register(
+                      name: nameController.text.trim(),
+                      email: emailController.text.trim(),
+                      password: passwordController.text.trim(),
+                    );
+              },
+            )
           ],
         ),
       ),
@@ -274,13 +290,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   color: Colors.grey[600]),
             ),
             SizedBox(height: 30),
-            _buildTextField("Email", "e.g. example@gmail.com", emailController,
-                validator: _validateEmail, errorText: _fieldErrors['email']),
+            AppTextField(
+              labelText: "Email",
+              hintText: "e.g. example@gmail.com",
+              controller: emailController,
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.next,
+              validator: _validateEmail,
+              errorText: _fieldErrors['email'],
+              onChanged: (_) => setState(() => _fieldErrors['email'] = null),
+            ),
             SizedBox(height: 20),
-            _buildTextField(
-                "Password", "Enter your password", passwordController,
-                validator: _validatePassword,
-                errorText: _fieldErrors['password']),
+            AppTextField(
+              labelText: "Password",
+              hintText: "Enter your password",
+              controller: passwordController,
+              obscureText: true,
+              textInputAction: TextInputAction.done,
+              validator: _validatePassword,
+              errorText: _fieldErrors['password'],
+              onChanged: (_) => setState(() => _fieldErrors['password'] = null),
+            ),
             SizedBox(height: 8),
             Align(
               alignment: Alignment.centerRight,
@@ -297,85 +327,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   )),
             ),
             SizedBox(height: 30),
-            _buildButton("Sign In")
+            AppButton(
+              text: "Login",
+              isLoading: isLoading,
+              onPressed: () async {
+                if (!_formKey.currentState!.validate()) return;
+
+                await ref.read(authNotifierProvider.notifier).login(
+                      email: emailController.text.trim(),
+                      password: passwordController.text.trim(),
+                    );
+              },
+            )
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildButton(String text) {
-    return ElevatedButton(
-      onPressed: () async {
-        if (!_formKey.currentState!.validate()) return;
-        if (text == "Sign In") {
-          await ref.read(authNotifierProvider.notifier).login(
-              email: emailController.text, password: passwordController.text);
-        } else {
-          await ref.read(authNotifierProvider.notifier).register(
-                name: nameController.text,
-                email: emailController.text,
-                password: passwordController.text,
-              );
-        }
-      },
-      style: ButtonStyle(
-        backgroundColor: WidgetStateProperty.all(Colors.green),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-            fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white),
-      ),
-    );
-  }
-
-  Widget _buildTextField(
-      String title, String hint, TextEditingController controller,
-      {String? Function(String?)? validator, String? errorText}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 15,
-          ),
-        ),
-        SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          validator: validator,
-          obscureText: title == 'Password',
-          onChanged: (_) {
-            setState(() {
-              if (title == 'Email') _fieldErrors['email'] = null;
-              if (title == 'Password') _fieldErrors['password'] = null;
-            });
-          },
-          autovalidateMode: AutovalidateMode.onUserInteraction,
-          decoration: InputDecoration(
-            isDense: true,
-            fillColor: const Color.fromARGB(255, 205, 221, 206),
-            errorText: errorText,
-            errorStyle: TextStyle(fontSize: 12, color: Colors.red[700]),
-            focusedBorder: OutlineInputBorder(
-                borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-                borderSide: BorderSide(
-                    width: 2, color: const Color.fromARGB(255, 58, 139, 62))),
-            border: OutlineInputBorder(
-                borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-                borderSide:
-                    BorderSide(color: const Color.fromARGB(255, 58, 139, 62))),
-            enabledBorder: OutlineInputBorder(
-                borderRadius: const BorderRadius.all(Radius.circular(8.0)),
-                borderSide:
-                    BorderSide(color: const Color.fromARGB(255, 58, 139, 62))),
-            hintText: hint,
-          ),
-        ),
-      ],
     );
   }
 

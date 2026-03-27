@@ -1,11 +1,15 @@
 // lib/core/network/dio_provider.dart
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pod/core/config/app_config.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:pod/core/network/interceptors/logging_interceptor.dart';
 import 'package:pod/core/utils/helpers/shared_prefs.dart';
 
 part 'dio_provider.g.dart';
+
+final forceLogoutProvider = StateProvider<bool>((ref) => false);
 
 @riverpod
 Dio dio(DioRef ref) {
@@ -50,6 +54,18 @@ Dio dio(DioRef ref) {
       onResponse: (response, handler) async {
         final prefs = await ref.read(sharedPrefsProvider.future);
 
+        Future<void> _forceLogout() async {
+          await prefs.clearAuth();
+          await prefs.setLoggedIn(false);
+          ref.read(forceLogoutProvider.notifier).state = true;
+        }
+
+        final requestPath = response.requestOptions.path;
+        final isAuthEndpoint = requestPath.contains(AppConfig.login) ||
+            requestPath.contains(AppConfig.register) ||
+            requestPath.contains(AppConfig.forgotPassword) ||
+            requestPath.contains(AppConfig.refresh);
+
         // Auto-save new token/session from headers
         final newToken = response.headers.value('token');
         final newSession = response.headers.value('sessionid');
@@ -65,6 +81,13 @@ Dio dio(DioRef ref) {
         }
 
         if (response.statusCode == 401) {
+          // IMPORTANT:
+          // Do NOT force-logout or refresh tokens for auth endpoints like login/register.
+          // A 401 there means "invalid credentials", and should be handled by the caller.
+          if (isAuthEndpoint) {
+            return handler.next(response);
+          }
+
           final refreshToken = await prefs.getRefreshToken();
 
           if (refreshToken != null) {
@@ -95,22 +118,44 @@ Dio dio(DioRef ref) {
                   return handler.resolve(retryResponse);
                 }
 
-                await prefs.clearAuth();
-                await prefs.setLoggedIn(false);
+                if (kDebugMode) {
+                  debugPrint(
+                    '[AUTH] Refresh succeeded but no token returned. Forcing logout.',
+                  );
+                }
+                await _forceLogout();
                 return handler.next(response);
               } else {
-                await prefs.clearAuth();
-                await prefs.setLoggedIn(false);
+                if (kDebugMode) {
+                  debugPrint(
+                    '[AUTH] Refresh failed: status=${refreshResponse.statusCode}, data=${refreshResponse.data}',
+                  );
+                }
+                await _forceLogout();
                 return handler.next(response);
               }
-            } catch (_) {
-              await prefs.clearAuth();
-              await prefs.setLoggedIn(false);
+            } on DioException catch (e) {
+              if (kDebugMode) {
+                debugPrint(
+                  '[AUTH] Refresh DioException: type=${e.type}, status=${e.response?.statusCode}, data=${e.response?.data}, message=${e.message}',
+                );
+              }
+              await _forceLogout();
+              return handler.next(response);
+            } catch (e) {
+              if (kDebugMode) {
+                debugPrint('[AUTH] Refresh unknown error: $e');
+              }
+              await _forceLogout();
               return handler.next(response);
             }
           } else {
-            await prefs.clearAuth();
-            await prefs.setLoggedIn(false);
+            if (kDebugMode) {
+              debugPrint(
+                '[AUTH] No refresh token found while handling 401. Forcing logout.',
+              );
+            }
+            await _forceLogout();
             return handler.next(response);
           }
         }

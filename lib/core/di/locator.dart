@@ -12,6 +12,7 @@ final scaffoldMessengerKeyProvider =
     Provider((ref) => GlobalKey<ScaffoldMessengerState>());
 
 @riverpod
+// ignore: deprecated_member_use_from_same_package
 void registerCoreProviders(RegisterCoreProvidersRef ref) {
   // Optional: ensures providers are initialized
 }
